@@ -20,7 +20,7 @@ from googleapiclient.discovery import build
 SERVICE_ACCOUNT_FILE = "transfermetrics_service_account.json"
 SPREADSHEET_ID = "1iQzeKqRWHIKbnNptH_wRQEpJ_pt1rI00ax9d5BhDAhU"
 SHEET_NAME = "AMP_review"
-TRANSFER_METRICS_PATH = r"transfer_metrics_metrics_2025-11-26T02_00_31.csv"
+TRANSFER_METRICS_PATH = r"metrics_2025-12-05T14_47_30.csv"
 # ===================================
 
 HEADER_CANON = "pointid|table|field|error"

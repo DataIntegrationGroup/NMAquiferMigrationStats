@@ -32,7 +32,7 @@ from googleapiclient.discovery import build
 SERVICE_ACCOUNT_FILE = "service_account.json"
 SHEET_NAME = "transfer_metrics"
 SPREADSHEET_ID = "1NtkaSWh8COQpMXd9AZ-fXMsRok9l-wwC1sz0lgVCTeo"
-TRANSFER_METRICS_PATH = r"transfer_metrics_metrics_2025-11-26T02_00_31.csv"
+TRANSFER_METRICS_PATH = r"metrics_2025-12-05T14_47_30.csv"
 # ===============================
 
 SUMMARY_KEYS = ["model", "input_count", "cleaned_count", "transferred", "issue_percentage"]
