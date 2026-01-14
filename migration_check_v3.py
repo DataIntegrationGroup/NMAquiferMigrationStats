@@ -32,11 +32,18 @@ from collections import defaultdict
 import pg8000
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+from datetime import datetime, timezone
+
 
 
 # =======================
 # CONFIG
 # =======================
+# Write last-run timestamp here (pick a cell outside your data table)
+UPDATED_CELL = "O2"  # change to e.g. "H1" or "AA1" if A1 is your header row
+UPDATED_PREFIX = "MIGRATION STATUS UPDATED:"
+
+
 SERVICE_ACCOUNT_FILE = "service_account.json"
 SPREADSHEET_ID = "1NtkaSWh8COQpMXd9AZ-fXMsRok9l-wwC1sz0lgVCTeo"
 SHEET_NAME = "MIGRATION_STATUS"
@@ -595,6 +602,15 @@ def main():
             valueInputOption="RAW",
             body={"values": col_values}
         ).execute()
+
+    # --- write last-run timestamp (single cell, non-intrusive) ---
+    ts = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M:%S MST")
+    service.spreadsheets().values().update(
+        spreadsheetId=SPREADSHEET_ID,
+        range=f"'{SHEET_NAME}'!{UPDATED_CELL}",
+        valueInputOption="RAW",
+        body={"values": [[f"{UPDATED_PREFIX} {ts}"]]}
+    ).execute()
 
     print(f"✓ Updated '{SHEET_NAME}' with: {COL_TEMP_SCHEMA}, {COL_FINAL_MAP}, {COL_FINAL_STATUS}, "
           f"{COL_TEMP_MAP}, {COL_TEMP_STATUS}, {COL_XFER_STATUS}")

@@ -22,14 +22,20 @@ from collections import defaultdict
 import pg8000
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+from datetime import datetime, timezone
+
 
 
 # =======================
 # CONFIG
 # =======================
+# Write last-run timestamp here (pick a cell outside your data table)
+UPDATED_CELL = "O3"  # change to e.g. "H1" or "AA1" if A1 is your header row
+UPDATED_PREFIX = "ROW COUNTS UPDATED:"
+
 SERVICE_ACCOUNT_FILE = "service_account.json"
 SPREADSHEET_ID = "1NtkaSWh8COQpMXd9AZ-fXMsRok9l-wwC1sz0lgVCTeo"
-SHEET_NAME = "Copy of MIGRATION_STATUS"
+SHEET_NAME = "MIGRATION_STATUS"
 
 # Your NMAquifer non-null export CSV (produced by your other script)
 NMA_COUNTS_CSV = "nma_aquifer_nonnull_counts.csv"
@@ -47,7 +53,7 @@ COL_OLD_TF = "NMAquifer_TableField"
 COL_TEMP_TF = "Temp Schema Target"
 
 # Output columns (created if missing)
-COL_OLD_COUNT = "Old NonNull Count"
+COL_OLD_COUNT = "NMA NonNull Count"
 COL_TEMP_COUNT = "Temp NonNull Count"
 COL_DIFF = "NonNull Diff"
 
@@ -377,6 +383,15 @@ def main():
             valueInputOption="RAW",
             body={"values": col_values}
         ).execute()
+
+    # --- write last-run timestamp (single cell, non-intrusive) ---
+    ts = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M:%S MST")
+    service.spreadsheets().values().update(
+        spreadsheetId=SPREADSHEET_ID,
+        range=f"'{SHEET_NAME}'!{UPDATED_CELL}",
+        valueInputOption="RAW",
+        body={"values": [[f"{UPDATED_PREFIX} {ts}"]]}
+    ).execute()
 
     print("✓ Wrote stage-then-refactor non-null counts to sheet columns:",
           COL_OLD_COUNT, COL_TEMP_COUNT, COL_DIFF)
