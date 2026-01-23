@@ -244,12 +244,6 @@ A common order that matches dependencies:
    python update_data_for_amp_review.py
    ```
 
-5. **After reviewing in the copy sheet, sync review columns back**
-
-   ```bash
-   python copy_amp_review_data.py
-   ```
-
 ---
 
 ## Troubleshooting
