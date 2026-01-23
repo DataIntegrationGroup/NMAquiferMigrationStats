@@ -7,7 +7,7 @@ import os
 INPUT_PATTERN = "InvalidWellData*.csv"
 
 # Name of the combined output file
-OUTPUT_FILE = "InvalidWellData_combined.csv"
+OUTPUT_FILE = "invalid_well_data/InvalidWellData_combined.csv"
 
 def main():
     files = sorted(glob.glob(INPUT_PATTERN))

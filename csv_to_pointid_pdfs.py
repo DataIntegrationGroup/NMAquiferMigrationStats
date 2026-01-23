@@ -17,7 +17,7 @@ from reportlab.lib.units import inch
 
 
 # === CONFIG ===
-CSV_PATH = r"monica_gw_request_20251118.csv"  # adjust if needed
+CSV_PATH = r"datarequests/monica_gw_request_20251118.csv"  # adjust if needed
 PHOTOS_DIR = r"\\agustin\amp\data\database\photos\Digital photos_wells"
 OUTPUT_DIR = r"output_pdfs"        # folder where individual PDFs are written
 
