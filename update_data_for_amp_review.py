@@ -24,7 +24,7 @@ UPDATED_PREFIX = "TRANSFER METRICS UPDATED:"
 SERVICE_ACCOUNT_FILE = "transfermetrics_service_account.json"
 SPREADSHEET_ID = "1iQzeKqRWHIKbnNptH_wRQEpJ_pt1rI00ax9d5BhDAhU"
 SHEET_NAME = "AMP_review"
-TRANSFER_METRICS_PATH = r"transfer_metrics_metrics_2026-01-23T07_38_02.csv"
+TRANSFER_METRICS_PATH = r"transfer_metrics_logs/transfer_metrics_metrics_2026-01-23T07_38_02.csv"
 # ===================================
 
 HEADER_CANON = "pointid|table|field|error"

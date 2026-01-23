@@ -21,7 +21,7 @@ from googleapiclient.discovery import build
 SERVICE_ACCOUNT_FILE = "service_account.json"
 SPREADSHEET_ID = "1NtkaSWh8COQpMXd9AZ-fXMsRok9l-wwC1sz0lgVCTeo"
 SHEET_NAME = "FieldPairs_Checked"
-CSV_PATH = r"transfer_metrics_metrics_2025-11-13T13_07_31.csv"   # pipe-delimited file
+CSV_PATH = r"transfer_metrics_logs/transfer_metrics_metrics_2025-11-13T13_07_31.csv"  # pipe-delimited file
 # =========================================================
 
 
