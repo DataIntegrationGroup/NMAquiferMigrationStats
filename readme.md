@@ -1,4 +1,4 @@
-````md
+``md
 # NMAquiferMigrationStats — `update*` Scripts
 
 This README documents **only** the repository scripts whose filenames start with **`update`**:
@@ -40,20 +40,8 @@ Make sure:
 1. The **Google Sheets API** is enabled for the GCP project.
 2. The target spreadsheets are **shared with the service account email** (Editor access).
 
-### Database credentials (only for scripts that query Postgres)
-
-Some scripts connect to Postgres using:
-
-* host: `127.0.0.1`
-* port: `5432`
-* database: `ocotillo-staging`
-* user: `marissa.fichera@nmt.edu`
-* password: from env var `DB_PASS`
-
-```bash
-export DB_PASS="your_password_here"
 ```
-
+```
 ---
 
 ## Scripts
