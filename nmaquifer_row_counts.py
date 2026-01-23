@@ -39,6 +39,7 @@ def main():
     )
     cur = conn.cursor()
 
+
     # pull columns
     schema_list = tuple(s.strip() for s in SCHEMAS if s.strip())
     placeholders = ",".join(["%s"] * len(schema_list))
