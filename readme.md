@@ -7,7 +7,6 @@ This README documents **only** the repository scripts whose filenames start with
 - `update_nonnull_counts.py`
 - `update_transfer_metrics_summary.py`
 - `update_data_for_amp_review.py`
-- `update_amp_review_data.py`
 
 These scripts are “ops / reporting” utilities that sync **Google Sheets** (and, for some tasks, an **Ocotillo Postgres** database + local log/CSV files).
 
@@ -216,33 +215,6 @@ python update_data_for_amp_review.py
 
 ---
 
-## `update_amp_review_data.py`
-
-**Purpose:** Copy review metadata from `Copy of AMP_review` → `AMP_review` in the AMP spreadsheet, matching rows by key columns.
-
-### Match key (must match exactly)
-
-* `NMAquifer_Table.Field`
-* `PointID`
-* `Error`
-
-### Copied columns
-
-* `Reviewed (yes/no)`
-* `Fixed (yes/no)`
-* `AMP_Reviewer`
-* `Notes`
-
-This is useful when you review/edit in a working copy sheet and then want to sync those annotations back to the main `AMP_review` tab.
-
-### Run
-
-```bash
-python update_amp_review_data.py
-```
-
----
-
 ## Suggested workflow
 
 A common order that matches dependencies:
@@ -275,7 +247,7 @@ A common order that matches dependencies:
 5. **After reviewing in the copy sheet, sync review columns back**
 
    ```bash
-   python update_amp_review_data.py
+   python copy_amp_review_data.py
    ```
 
 ---
