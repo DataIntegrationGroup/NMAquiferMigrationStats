@@ -32,6 +32,10 @@ from collections import defaultdict
 import pg8000
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+from datetime import datetime, timezone
+# Write last-run timestamp here (pick a cell outside your data table)
+UPDATED_CELL = "O2"  # change to e.g. "H1" or "AA1" if A1 is your header row
+UPDATED_PREFIX = "MIGRATION STATUS UPDATED:"
 
 
 # =======================
@@ -89,6 +93,7 @@ XFER_NOT_MIGRATED = "not being migrated"
 HAND_INPUT_TABLES = {
     "waterlevelscontinuous_pressure",
     "waterlevelscontinuous_acoustic",
+    "minorandtracechemistry"
 }
 
 # =======================
@@ -491,6 +496,8 @@ def main():
             final_map = "n/a"
             final_status = "n/a"
             xfer = XFER_NOT_MIGRATED
+            final_cell_val = XFER_NOT_MIGRATED
+
 
         # SECOND BLOCK: direct-to-final
         elif mig_path == PATH_DIRECT:
@@ -595,6 +602,15 @@ def main():
             valueInputOption="RAW",
             body={"values": col_values}
         ).execute()
+
+    # --- write last-run timestamp (single cell, non-intrusive) ---
+    ts = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
+    service.spreadsheets().values().update(
+        spreadsheetId=SPREADSHEET_ID,
+        range=f"'{SHEET_NAME}'!{UPDATED_CELL}",
+        valueInputOption="RAW",
+        body={"values": [[f"{UPDATED_PREFIX} {ts}"]]}
+    ).execute()
 
     print(f"✓ Updated '{SHEET_NAME}' with: {COL_TEMP_SCHEMA}, {COL_FINAL_MAP}, {COL_FINAL_STATUS}, "
           f"{COL_TEMP_MAP}, {COL_TEMP_STATUS}, {COL_XFER_STATUS}")

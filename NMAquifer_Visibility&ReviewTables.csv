@@ -1,0 +1,20 @@
+TABLE_SCHEMA,TABLE_NAME,COLUMN_NAME
+dbo,[Chemistry SampleInfo],PublicRelease
+dbo,Chemistry SampleInfo,PublicRelease
+dbo,Location,PublicRelease
+dbo,Location_backup,PublicRelease
+dbo,Location_backupNew,PublicRelease
+dbo,LocationsEB,PublicRelease
+dbo,LocationsPS,PublicRelease
+dbo,LocationsSB,PublicRelease
+dbo,Tbl_TaosWLS,PublicRelease
+dbo,Tbl_TaosWSC,PublicRelease
+dbo,view_NGWMN_WaterLevels,PublicRelease
+dbo,WaterLevels,PublicRelease
+dbo,WaterLevels_archive,PublicRelease
+dbo,WaterLevels_bak,PublicRelease
+dbo,WaterLevelsContinuous_Acoustic,PublicRelease
+dbo,WaterLevelsContinuous_Acoustic_Daily,PublicRelease
+dbo,WaterLevelsContinuous_Pressure,QCed
+dbo,WaterLevelsContinuous_Pressure_Daily,QCed
+dbo,WaterLevelsContinuous_Pressure_Test,QCed

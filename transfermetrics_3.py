@@ -27,12 +27,16 @@ import re
 
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+from datetime import datetime, timezone
+# Write last-run timestamp here (pick a cell outside your data table)
+UPDATED_CELL = "A1"  # change to e.g. "H1" or "AA1" if A1 is your header row
+UPDATED_PREFIX = "TRANSFER METRICS UPDATED:"
 
 # ====== CONFIG: EDIT THESE ======
 SERVICE_ACCOUNT_FILE = "service_account.json"
 SHEET_NAME = "transfer_metrics"
 SPREADSHEET_ID = "1NtkaSWh8COQpMXd9AZ-fXMsRok9l-wwC1sz0lgVCTeo"
-TRANSFER_METRICS_PATH = r"metrics_2025-12-05T14_47_30.csv"
+TRANSFER_METRICS_PATH = r"transfer_metrics_metrics_2026-01-23T07_38_02.csv"
 # ===============================
 
 SUMMARY_KEYS = ["model", "input_count", "cleaned_count", "transferred", "issue_percentage"]
@@ -200,6 +204,8 @@ def write_block_summary(service, spreadsheet_id: str, sheet_name: str, rows: lis
     #     body={"values": values}
     # ).execute()
 
+
+
 def main():
     rows = parse_transfer_metrics_blocks(Path(TRANSFER_METRICS_PATH))
     print(f"[info] Parsed {len(rows)} summary block(s).")
@@ -208,6 +214,16 @@ def main():
 
     service = get_sheets_service(SERVICE_ACCOUNT_FILE)
     write_block_summary(service, SPREADSHEET_ID, SHEET_NAME, rows)
+
+    # --- write last-run timestamp (single cell, non-intrusive) ---
+    ts = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
+    service.spreadsheets().values().update(
+        spreadsheetId=SPREADSHEET_ID,
+        range=f"'{SHEET_NAME}'!{UPDATED_CELL}",
+        valueInputOption="RAW",
+        body={"values": [[f"{UPDATED_PREFIX} {ts}"]]}
+    ).execute()
+
     print("[done] Wrote summaries to FieldPairs_Checked!G1 (G..L).")
 
 if __name__ == "__main__":

@@ -22,14 +22,17 @@ from collections import defaultdict
 import pg8000
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
-
+from datetime import datetime, timezone
+# Write last-run timestamp here (pick a cell outside your data table)
+UPDATED_CELL = "O3"  # change to e.g. "H1" or "AA1" if A1 is your header row
+UPDATED_PREFIX = "ROW COUNTS UPDATED:"
 
 # =======================
 # CONFIG
 # =======================
 SERVICE_ACCOUNT_FILE = "service_account.json"
 SPREADSHEET_ID = "1NtkaSWh8COQpMXd9AZ-fXMsRok9l-wwC1sz0lgVCTeo"
-SHEET_NAME = "Copy of MIGRATION_STATUS"
+SHEET_NAME = "MIGRATION_STATUS"
 
 # Your NMAquifer non-null export CSV (produced by your other script)
 NMA_COUNTS_CSV = "nma_aquifer_nonnull_counts.csv"
@@ -47,12 +50,16 @@ COL_OLD_TF = "NMAquifer_TableField"
 COL_TEMP_TF = "Temp Schema Target"
 
 # Output columns (created if missing)
-COL_OLD_COUNT = "Old NonNull Count"
+COL_OLD_COUNT = "NMA NonNull Count"
 COL_TEMP_COUNT = "Temp NonNull Count"
 COL_DIFF = "NonNull Diff"
 
 # Migration Path values
 PATH_STAGE = "stage then refactor"
+
+COL_XFER_STATUS = "Transfer Status"
+XFER_STAGE_COMPLETE = "staging transfer complete"
+
 
 
 # =======================
@@ -361,11 +368,30 @@ def main():
         body={"values": [headers]}
     ).execute()
 
+    # -------------------------------
+    # NON-INTRUSIVE OVERRIDE: Transfer Status
+    # Only change Transfer Status when NonNull Diff == 0 (for stage then refactor rows).
+    # Otherwise preserve existing sheet values.
+    # -------------------------------
+    idx_xfer = find_required_col(headers, COL_XFER_STATUS)  # must already exist on sheet
+    out_xfer = []
+
+    for i, r in enumerate(data_rows):
+        existing_xfer = r[idx_xfer] if idx_xfer < len(r) else ""
+        mig_path = normalize_key(r[idx_path] if idx_path < len(r) else "")
+        diff_str = out_diff[i] if i < len(out_diff) else ""
+
+        if mig_path == PATH_STAGE and diff_str == "0":
+            out_xfer.append(XFER_STAGE_COMPLETE)
+        else:
+            out_xfer.append(existing_xfer)
+
     num_rows = len(data_rows) + 1
     updates = [
         (idx_old_count, COL_OLD_COUNT, out_old_count),
         (idx_temp_count, COL_TEMP_COUNT, out_temp_count),
         (idx_diff, COL_DIFF, out_diff),
+        (idx_xfer, COL_XFER_STATUS, out_xfer),
     ]
 
     for col_idx, header_name, col_data in updates:
@@ -377,6 +403,15 @@ def main():
             valueInputOption="RAW",
             body={"values": col_values}
         ).execute()
+
+    # --- write last-run timestamp (single cell, non-intrusive) ---
+    ts = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
+    service.spreadsheets().values().update(
+        spreadsheetId=SPREADSHEET_ID,
+        range=f"'{SHEET_NAME}'!{UPDATED_CELL}",
+        valueInputOption="RAW",
+        body={"values": [[f"{UPDATED_PREFIX} {ts}"]]}
+    ).execute()
 
     print("✓ Wrote stage-then-refactor non-null counts to sheet columns:",
           COL_OLD_COUNT, COL_TEMP_COUNT, COL_DIFF)
