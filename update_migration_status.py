@@ -93,7 +93,11 @@ XFER_NOT_MIGRATED = "not being migrated"
 HAND_INPUT_TABLES = {
     "waterlevelscontinuous_pressure",
     "waterlevelscontinuous_acoustic",
-    "minorandtracechemistry"
+    "minorandtracechemistry",
+    "equipment",
+    "location",
+    "waterlevels"
+
 }
 
 # =======================

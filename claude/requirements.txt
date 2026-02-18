@@ -1,0 +1,26 @@
+# Core
+sqlalchemy>=2.0
+pandas>=2.0
+pyyaml>=6.0
+
+# Cloud SQL Python Connector
+# pg8000  — PostgreSQL target (IAM auth compatible, pure Python)
+# pytds   — SQL Server source (the only MSSQL driver the connector supports)
+cloud-sql-python-connector[pg8000,pytds]
+
+# pyodbc is imported only to inherit its SQLAlchemy MSSQL dialect class
+# (SQL generation + schema reflection). It never opens a real connection.
+# No OS-level ODBC driver installation required.
+pyodbc
+
+# Google auth (for ADC / IAM — also used by the Sheets API)
+google-auth>=2.0
+google-api-python-client>=2.0
+
+# NOTE: psycopg2 and pyodbc are NOT needed when using the Cloud SQL
+# connector. The connector uses pg8000 and pytds instead, which are
+# pure-Python and require no OS-level driver installation.
+#
+# If you need the plain DSN fallback path for local testing:
+# psycopg2-binary
+# pyodbc

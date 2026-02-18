@@ -1,0 +1,247 @@
+# ============================================================
+# migration_verifier/config.yaml
+# ============================================================
+# Both source and target run on Cloud SQL, connected via the
+# Cloud SQL Python Connector.  No raw DSN strings needed.
+#
+# DO NOT commit the filled copy to source control.
+# Commit this template instead.
+# ============================================================
+
+
+# ── Source: Cloud SQL SQL Server ─────────────────────────────
+# SQL Server on Cloud SQL does NOT support IAM database auth,
+# so a regular username + password is still required here.
+# However, the connector handles the secure tunnel automatically
+# (no SSL certs, no firewall rules, no Auth Proxy process needed).
+#
+# Find your instance connection name in:
+#   Cloud Console → SQL → your instance → Overview → "Connection name"
+#   Format is always:  project-id:region:instance-name
+cloud_sql_source:
+  instance_connection_name: "waterdatainitiative-271000:us-west4:nm-aquifer-clone"
+  database: "NM_Aquifer_Dev_DB"          # your source DB name
+  user:     "sqlserver"      # SQL Server login username
+  password: "ilikewaterdata!!"      # SQL Server login password
+  ip_type:  "public"             # "public" or "private" (VPC)
+
+source_label: "NMAquifer SQL Server (legacy)"
+source_schema: "dbo"             # SQL Server schema, usually "dbo"
+
+
+# ── Target: Cloud SQL PostgreSQL (IAM auth) ──────────────────
+# Postgres on Cloud SQL supports IAM database authentication.
+# No password needed — the connector uses your gcloud ADC creds.
+#
+# Prerequisites:
+#   1. Run:  gcloud auth application-default login
+#   2. In Cloud SQL Console → Users → Add IAM user → add your email
+#      (this is separate from the GCP IAM role — both are required)
+#   3. Your account needs the "Cloud SQL Client" IAM role on the project
+#
+# iam_user should match exactly what you use with gcloud, e.g.:
+#   - Personal account:    "your.name@domain.com"
+#   - Service account:     "my-sa@my-project.iam.gserviceaccount.com"
+cloud_sql_target:
+  instance_connection_name: "waterdatainitiative-271000:us-west4:dataservices"
+  database: "ocotillo-staging"     # your target DB name
+  iam_user: "marissa.fichera@nmt.edu"
+  ip_type:  "public"             # "public" or "private" (VPC)
+
+target_label: "PostgreSQL (new)"
+target_schema: "public"          # Postgres schema, usually "public"
+
+
+# ── Fallback plain DSNs ──────────────────────────────────────
+# Only used if the cloud_sql_source / cloud_sql_target blocks
+# above are absent or commented out.  Useful for local SQLite
+# testing or non-Cloud-SQL databases.
+#
+# source_dsn: "mssql+pyodbc://user:pass@host/db?driver=ODBC+Driver+17+for+SQL+Server"
+# target_dsn: "postgresql+psycopg2://user:pass@host:5432/db"
+
+
+# ── Anchor table ─────────────────────────────────────────────
+anchor_table: "Location"           # table that directly holds pointID
+anchor_pk:    "PointID"          # the pointID column name in that table
+
+# Target schema has a different anchor table/PK.
+# All target-side joins resolve back to this table/column instead.
+target_anchor_table: "thing"
+target_anchor_pk:    "name"
+
+
+# ── Google Sheets mapping ────────────────────────────────────
+# Live pull on every run — always uses latest version of the sheet.
+# Share the sheet with the service account email (Viewer access).
+#
+# Spreadsheet ID is the long string in the sheet URL:
+#   docs.google.com/spreadsheets/d/<SPREADSHEET_ID>/edit
+google_sheets:
+  service_account_file: "./service_account.json"
+  spreadsheet_id: "1NtkaSWh8COQpMXd9AZ-fXMsRok9l-wwC1sz0lgVCTeo"
+  range: "MIGRATION_STATUS!A:E"            # adjust tab name / column range if needed
+
+# CSV fallback (ignored if google_sheets.spreadsheet_id is set)
+# mapping_csv: "./mapping_export.csv"
+
+
+# ── Transformed fields ───────────────────────────────────────
+# Fields that went through a transformation during migration
+# (concat, split, reformat, computed values, etc.).
+# These are flagged "Manual Review Required" — values not compared.
+# Format: "old_table.old_field"  (matches NMAquifer_TableField column)
+transformed_fields:
+  - "old_table.some_transformed_field"
+  - "another_table.computed_column"
+
+
+# ── Unmapped column enforcement ──────────────────────────────
+# true  = columns in the DB with no mapping row are reported as errors
+# false = silently skip them (useful during early/partial migration)
+check_unmapped_source: true
+check_unmapped_target: true
+
+# ── Manual FK paths ──────────────────────────────────────────
+# Used when FK constraints exist in the DB but SQLAlchemy's reflection
+# can't traverse them (e.g. table names with spaces break reflection).
+# Also useful for tables with no FK constraints at all.
+#
+# Format: one entry per source table that can't be auto-resolved.
+# Hops are listed in order from the start table toward the anchor.
+# The BFS is skipped entirely for any table listed here.
+#
+# source: paths for the legacy SQL Server side
+# target: paths for the new PostgreSQL side (usually not needed)
+manual_fk_paths:
+  source:
+    MinorandTraceChemistry:
+      - { from_table: "MinorandTraceChemistry", from_col: "SamplePtID",  to_table: "Chemistry SampleInfo", to_col: "SamplePtID" }
+      - { from_table: "Chemistry SampleInfo",   from_col: "LocationId",  to_table: "Location",             to_col: "LocationId" }
+    MajorChemistry:
+      - { from_table: "MajorChemistry",         from_col: "SamplePtID",  to_table: "Chemistry SampleInfo", to_col: "SamplePtID" }
+      - { from_table: "Chemistry SampleInfo",   from_col: "LocationId",  to_table: "Location",             to_col: "LocationId" }
+    Radionuclides:
+      - { from_table: "Radionuclides",          from_col: "SamplePtID",  to_table: "Chemistry SampleInfo", to_col: "SamplePtID" }
+      - { from_table: "Chemistry SampleInfo",   from_col: "LocationId",  to_table: "Location",             to_col: "LocationId" }
+    FieldParameters:
+      - { from_table: "FieldParameters",        from_col: "SamplePtID",  to_table: "Chemistry SampleInfo", to_col: "SamplePtID" }
+      - { from_table: "Chemistry SampleInfo",   from_col: "LocationId",  to_table: "Location",             to_col: "LocationId" }
+    "Chemistry SampleInfo":
+      - { from_table: "Chemistry SampleInfo",   from_col: "LocationId",  to_table: "Location",             to_col: "LocationId" }
+    WellData:
+      - { from_table: "WellData",               from_col: "LocationId",  to_table: "Location",             to_col: "LocationId" }
+    WellScreens:
+      - { from_table: "WellScreens",              from_col: "WellID",                  to_table: "WellData",                 to_col: "WellID" }
+      - { from_table: "WellData",                 from_col: "LocationId",              to_table: "Location",                 to_col: "LocationId" }
+  target:
+    NMA_AssociatedData:
+      - { from_table: "NMA_AssociatedData", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    NMA_Chemistry_SampleInfo:
+      - { from_table: "NMA_Chemistry_SampleInfo", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    NMA_FieldParameters:
+      - { from_table: "NMA_FieldParameters", from_col: "chemistry_sample_info_id", to_table: "NMA_Chemistry_SampleInfo", to_col: "id" }
+      - { from_table: "NMA_Chemistry_SampleInfo", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    NMA_HydraulicsData:
+      - { from_table: "NMA_HydraulicsData", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    NMA_MajorChemistry:
+      - { from_table: "NMA_MajorChemistry", from_col: "chemistry_sample_info_id", to_table: "NMA_Chemistry_SampleInfo", to_col: "id" }
+      - { from_table: "NMA_Chemistry_SampleInfo", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    NMA_MinorTraceChemistry:
+      - { from_table: "NMA_MinorTraceChemistry", from_col: "chemistry_sample_info_id", to_table: "NMA_Chemistry_SampleInfo", to_col: "id" }
+      - { from_table: "NMA_Chemistry_SampleInfo", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    NMA_Radionuclides:
+      - { from_table: "NMA_Radionuclides", from_col: "chemistry_sample_info_id", to_table: "NMA_Chemistry_SampleInfo", to_col: "id" }
+      - { from_table: "NMA_Chemistry_SampleInfo", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    NMA_Soil_Rock_Results:
+      - { from_table: "NMA_Soil_Rock_Results", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    NMA_Stratigraphy:
+      - { from_table: "NMA_Stratigraphy", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    NMA_SurfaceWaterData:
+      - { from_table: "NMA_SurfaceWaterData", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    NMA_WaterLevelsContinuous_Pressure_Daily:
+      - { from_table: "NMA_WaterLevelsContinuous_Pressure_Daily", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    aquifer_type:
+      - { from_table: "aquifer_type", from_col: "thing_aquifer_association_id", to_table: "thing_aquifer_association", to_col: "id" }
+      - { from_table: "thing_aquifer_association", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    asset_thing_association:
+      - { from_table: "asset_thing_association", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    collaborative_network_well:
+      - { from_table: "collaborative_network_well", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    deployment:
+      - { from_table: "deployment", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    field_activity:
+      - { from_table: "field_activity", from_col: "field_event_id", to_table: "field_event", to_col: "id" }
+      - { from_table: "field_event", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    field_event:
+      - { from_table: "field_event", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    field_event_participant:
+      - { from_table: "field_event_participant", from_col: "field_event_id", to_table: "field_event", to_col: "id" }
+      - { from_table: "field_event", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    group_thing_association:
+      - { from_table: "group_thing_association", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    location_thing_association:
+      - { from_table: "location_thing_association", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    measuring_point_history:
+      - { from_table: "measuring_point_history", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    monitoring_frequency_history:
+      - { from_table: "monitoring_frequency_history", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    observation:
+      - { from_table: "observation", from_col: "sample_id", to_table: "sample", to_col: "id" }
+      - { from_table: "sample", from_col: "field_event_participant_id", to_table: "field_event_participant", to_col: "id" }
+      - { from_table: "field_event_participant", from_col: "field_event_id", to_table: "field_event", to_col: "id" }
+      - { from_table: "field_event", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    sample:
+      - { from_table: "sample", from_col: "field_event_participant_id", to_table: "field_event_participant", to_col: "id" }
+      - { from_table: "field_event_participant", from_col: "field_event_id", to_table: "field_event", to_col: "id" }
+      - { from_table: "field_event", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    sensor:
+      - { from_table: "sensor", from_col: "id", to_table: "deployment", to_col: "sensor_id" }
+      - { from_table: "deployment", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    thing_aquifer_association:
+      - { from_table: "thing_aquifer_association", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    thing_contact_association:
+      - { from_table: "thing_contact_association", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    thing_geologic_formation_association:
+      - { from_table: "thing_geologic_formation_association", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    thing_id_link:
+      - { from_table: "thing_id_link", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    transducer_observation:
+      - { from_table: "transducer_observation", from_col: "deployment_id", to_table: "deployment", to_col: "id" }
+      - { from_table: "deployment", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    transducer_observation_block:
+      - { from_table: "transducer_observation_block", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    well_casing_material:
+      - { from_table: "well_casing_material", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    well_purpose:
+      - { from_table: "well_purpose", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    well_screen:
+      - { from_table: "well_screen", from_col: "thing_id", to_table: "thing", to_col: "id" }
+    # Tables with no FK path to thing — these will error if mapped;
+    # add to exclude_tables or mark as transformed in the mapping sheet:
+    # notes, status_history, permission_history, data_provenance, sensor (via deployment above)
+
+# ── Tables to skip entirely ──────────────────────────────────
+# Source table prefixes to skip — lookup/reference tables that don't
+# have per-pointID data and can't join back to the anchor table.
+# LU_ tables are the legacy SQL Server lookup tables (now lexicon_term).
+exclude_source_prefixes:
+  - "LU_"
+
+exclude_tables:
+  - "audit_log"
+  - "migration_staging"
+  - "schema_migrations"
+  - "sysdiagrams"                # SQL Server internal table
+
+
+# ── Point IDs ────────────────────────────────────────────────
+# Inline list, or use --point-ids-file on the CLI (takes precedence)
+point_ids:
+  - 1001
+  - 1002
+  - 1003
+
+
+# ── Diff settings ────────────────────────────────────────────
+max_diff_rows: 200               # max captured diffs per field per pointID

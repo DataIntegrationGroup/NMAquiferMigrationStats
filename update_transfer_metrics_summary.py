@@ -36,7 +36,7 @@ UPDATED_PREFIX = "TRANSFER METRICS UPDATED:"
 SERVICE_ACCOUNT_FILE = "service_account.json"
 SHEET_NAME = "transfer_metrics"
 SPREADSHEET_ID = "1NtkaSWh8COQpMXd9AZ-fXMsRok9l-wwC1sz0lgVCTeo"
-TRANSFER_METRICS_PATH = r"transfer_metrics_logs/transfer_metrics_metrics_2026-01-23T07_38_02.csv"
+TRANSFER_METRICS_PATH = r"transfer_metrics_logs/transfer_metrics_metrics_2026-01-27T01_15_56.csv"
 # ===============================
 
 SUMMARY_KEYS = ["model", "input_count", "cleaned_count", "transferred", "issue_percentage"]
