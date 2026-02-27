@@ -3,5 +3,6 @@
 .idea/misc.xml
 service_account.json
 transfermetrics_service_account.json
+well_inventory_service_account.json
 .xml
 .iml
